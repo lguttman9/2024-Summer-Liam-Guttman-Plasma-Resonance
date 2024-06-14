@@ -1,11 +1,8 @@
-#Finale
+# Amp_Ratio_Vs_Pol_Angle
+
 from ast import literal_eval as unhex
 import numpy as np
 import matplotlib.pyplot as plt 
-from ast import literal_eval as unhex
-
-int_value = int('000B',16)
-print(int_value)
 
 
 
@@ -44,7 +41,43 @@ for a in range(len(file)):
                 
             b += 1
 
-#print(array_list[0][:10],len(file))
+#print(array_list[2][:10])
+
+#Gain Calculator
+def GtGr(tht,phi,th):
+     phi = phi + th + 90
+     if (phi>360):
+         phi = phi - 360
+     GTbroad = 5.5781236 - 2.8200065 * np.cos(np.radians(tht))**2 - 3.5209044 * np.cos(np.radians(tht))**4+ 10.400722 * np.cos(np.radians(tht))**6  - 9.5485295 *np.cos(np.radians(tht))**8
+     GTbroaddB = 10*np.log10(GTbroad)
+     GRbroad = 4.1036476 + 1.5400743 * np.cos(np.radians(tht))**2 -3.1886833 * np.cos(np.radians(tht))**4+ 2.9979406 * np.cos(np.radians(tht))**6 - 5.3852557 *np.cos(np.radians(tht))**8
+     GRbroaddB = 10*np.log10(GRbroad)
+     if (phi < 90 or phi > 270):
+         GTenddB = (0.031795133 + 4.8990288 * np.cos(np.radians(tht))**2+ 13.669295 * np.cos(np.radians(tht))**4- 25.170221 * np.cos(np.radians(tht))**6 + 22.814163 *np.cos(np.radians(tht))**8)/(7.7827215 - 8.1684971 + 11.627713)
+         if (GTenddB<0):
+             GTenddB=0
+         GRenddB = (-0.006819758 + 7.9024553 *np.cos(np.radians(tht))**2 -1.538963 * np.cos(np.radians(tht))**4+ 12.2719 * np.cos(np.radians(tht))**6 -4.0899217 *np.cos(np.radians(tht))**8)/(8.2011129 - 9.6857106 + 13.001805)
+         if (GRenddB<0):
+             GRenddB=0
+         GTenddB = np.cos(np.radians(phi))**2 * GTenddB**0.6
+         GRenddB = np.cos(np.radians(phi))**2 * GRenddB**0.65
+         GTtdB = GTbroaddB - (7.7827215 * GTenddB - 8.1684971 *GTenddB**2 + 11.627713 * GTenddB**3)
+         GRtdB = GRbroaddB - (8.2011129 * GTenddB - 9.6857106 *GTenddB**2 + 13.001805 * GTenddB**3)
+     else:
+         GTenddB = (-0.021062092 + 7.1497901 *np.cos(np.radians(tht))**2 - 3.3448948 * np.cos(np.radians(tht))**4+ 13.533221 * np.cos(np.radians(tht))**6 - 4.7793303 *np.cos(np.radians(tht))**8)/(6.4776762 - 4.5794876 + 8.1254215)
+         if (GTenddB<0):
+             GTenddB=0
+         GRenddB = (-0.005270753 + 6.3391005 *np.cos(np.radians(tht))**2 + 3.3638038 * np.cos(np.radians(tht))**4+ 0.36978112 * np.cos(np.radians(tht))**6 + 2.3794633 *np.cos(np.radians(tht))**8)/(6.2636256 - 3.9807794 + 7.4747311)
+         if (GRenddB<0):
+             GRenddB=0
+         GTenddB = np.cos(np.radians(phi))**2 * GTenddB**0.6
+         GRenddB = np.cos(np.radians(phi))**2 * GRenddB**0.65
+         GTtdB = GTbroaddB - (6.4776762 * GTenddB -4.5794876 *GTenddB**2 + 8.1254215 * GTenddB**3)
+         GRtdB = GRbroaddB - (6.2636256 * GTenddB - 3.9807794 *GTenddB**2 + 7.4747311 * GTenddB**3)
+     GTt = 10**(GTtdB/10)
+     GRt = 10**(GRtdB/10)
+     Gt = GTt*GRt
+     return (GRt)
 
 
 #Chat Mev-Reader
@@ -54,21 +87,23 @@ import os
 import numpy as np
 
 directory = '/srv/meteor/radar/spool/mev-38/mev-2020-000-38-00'
-max_amplitudes = np.array([], dtype=float)  # Rename the variable to avoid conflict
+plots = [np.array([], dtype =int),np.array([], dtype =int),np.array([], dtype =int),np.array([], dtype =int),np.array([], dtype =int)]  # Rename the variable to avoid conflict
 
 # Get the list of .dat files and sort them in numeric order
 files = [f for f in os.listdir(directory) if f.endswith('.dat')]
 files.sort(key=lambda f: int(''.join(filter(str.isdigit, f))))
 
 file_count = 0
-max_files = 5  # Limit to first 5 files
+max_files = 2000  # Limit to first 5 files
 
 for filename in files:
     if filename.endswith('.dat'):
         file_path = os.path.join(directory, filename)
         with open(file_path, 'rb') as f:  # Open the file in binary mode
-            array_list = []
+            
             file_content = f.read()
+
+            #print(file_path[63:67])
 
             # Calculate the total number of bytes
             num_bytes = len(file_content)
@@ -125,23 +160,38 @@ for filename in files:
 
             f.close()
             # Append the maximum amplitude from channel 6 to max_amplitudes array
-            max_amplitudes = np.append(max_amplitudes, np.max(amp_lists[6]))
+            
 
+            hex_path = int(file_path[63:67],16)
+
+            top1 = np.where(amp_lists[5] == np.max(amp_lists[5]))[0][0]
+            top2 = np.where(amp_lists[6] == np.max(amp_lists[6]))[0][0]
+            max_avg = np.array(amp_lists[5][top1-5:top1+5]).mean() / np.array(amp_lists[6][top2-5:top2+5]).mean()
+            
+
+            for i in range(len(array_list[2])):
+                if hex_path == array_list[2][i]:
+                    gain_ratio = GtGr(array_list[11][i],array_list[12][i],254)/ GtGr(array_list[11][i],array_list[12][i],344)
+                    plots[4] = np.append(plots[4], array_list[12][i])
+                    plots[3] = np.append(plots[3],array_list[11][i])
+                    plots[2] = np.append(plots[2], np.log10(max_avg*gain_ratio))
+                    plots[1] = np.append(plots[1],hex_path)
+                    plots[0] = np.append(plots[0], array_list[4][i])
+                    #print(file_path[63:67])
+                    
+                    
         file_count += 1
         if file_count >= max_files:
             break  # Stop after processing the first 5 files
-    print(file_path)
-
-print(max_amplitudes)
-
-            
 
 
-'''
-
-print(max(amp_lists[6]))
-#fig, axes = plt.subplots(2)
-#axes[0].plot(amp_lists[0])
-plt.plot(amp_lists[0])
-'''
-
+y = plots[2]
+x = plots[0]
+#print(len(plots[0]),len(array_list[12]))
+plt.scatter(x,y, alpha = 0.5)
+plt.xlabel("Polarization Angle")
+plt.ylabel("log of Amplitude ratio(A6/A7)")
+#plt.title("log of Max Amplitude Ratio vs polarization angle of 1000 meteors accounting fo gain patterns")
+plt.show()
+#print(plots)
+ 
