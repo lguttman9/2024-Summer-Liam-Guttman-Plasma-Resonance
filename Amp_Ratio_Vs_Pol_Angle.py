@@ -187,11 +187,41 @@ for filename in files:
 
 y = plots[2]
 x = plots[0]
-#print(len(plots[0]),len(array_list[12]))
-plt.scatter(x,y, alpha = 0.5)
-plt.xlabel("Polarization Angle")
-plt.ylabel("log of Amplitude ratio(A6/A7)")
-#plt.title("log of Max Amplitude Ratio vs polarization angle of 1000 meteors accounting fo gain patterns")
-plt.show()
-#print(plots)
+
+ #Check for NaNs or infinite values in x and y
+if np.isnan(x).any() or np.isnan(y).any():
+    print("NaNs detected in data.")
+if np.isinf(x).any() or np.isinf(y).any():
+    print("Infinite values detected in data.")
+
+# Remove NaNs or infinite values
+valid_mask = np.isfinite(x) & np.isfinite(y)
+x_clean = x[valid_mask]
+y_clean = y[valid_mask]
+
+# Scale the data
+x_mean = x_clean.mean()
+x_std = x_clean.std()
+y_mean = y_clean.mean()
+y_std = y_clean.std()
+
+x_scaled = (x_clean - x_mean) / x_std
+y_scaled = (y_clean - y_mean) / y_std
+
+# Fit the scaled data
+try:
+    z = np.polyfit(x_scaled, y_scaled, 1)
+    p = np.poly1d(z)
+
+    # Plot the results
+    plt.scatter(x_clean, y_clean, alpha=0.5)
+    plt.plot(x_clean, p((x_clean - x_mean) / x_std) * y_std + y_mean, "r",label='Fitted line',)
+    plt.axhline(y=0,color= 'g')
+    plt.xlabel("Polarization Angle")
+    plt.ylabel("log of Amplitude ratio (A6/A7)")
+    plt.title("log of Max Amplitude Ratio vs Polarization Angle of 1000 Meteors (accounting for gain patterns)")
+    plt.legend()
+    plt.show()
+except np.linalg.LinAlgError as e:
+    print(f"LinAlgError during fitting: {e}")
  
